@@ -1,0 +1,48 @@
+Iteration: 1
+Current Rate Function: sqrt(xy/(x + y))
+Rank: 0 Flux: 23512.9
+Rank: 1 Flux: 19925.8
+Rank: 2 Flux: 22321.6
+Rank: 3 Flux: 25872.4
+Rank: 4 Flux: 22692.5
+Rank: 5 Flux: 25455.1
+Rank: 6 Flux: 19830.2
+Rank: 7 Flux: 23273.3
+
+Mean: 0.114302
+
+Thread: 0 Running Time: 0.313828 Count: 5503613
+Thread: 1 Running Time: 0.304184 Count: 5375782
+Thread: 2 Running Time: 0.303848 Count: 5437941
+Thread: 3 Running Time: 0.300617 Count: 5497648
+Thread: 4 Running Time: 0.30379 Count: 5476408
+Thread: 5 Running Time: 0.297878 Count: 5533512
+Thread: 6 Running Time: 0.302769 Count: 5447364
+Thread: 7 Running Time: 0.300782 Count: 5501229
+
+================================================
+
+Iteration: 2
+Current Rate Function: sqrt(x + y)
+Rank: 0 Flux: 187640
+Rank: 1 Flux: 197509
+Rank: 2 Flux: 206624
+Rank: 3 Flux: 187220
+Rank: 4 Flux: 207916
+Rank: 5 Flux: 199295
+Rank: 6 Flux: 200121
+Rank: 7 Flux: 191514
+
+Mean: 0.986149
+
+Thread: 0 Running Time: 0.277812 Count: 18773344
+Thread: 1 Running Time: 0.268456 Count: 18878486
+Thread: 2 Running Time: 0.269592 Count: 18910544
+Thread: 3 Running Time: 0.268713 Count: 18797158
+Thread: 4 Running Time: 0.269094 Count: 18909668
+Thread: 5 Running Time: 0.270329 Count: 18816700
+Thread: 6 Running Time: 0.269386 Count: 18810293
+Thread: 7 Running Time: 0.270016 Count: 18777937
+
+================================================
+
