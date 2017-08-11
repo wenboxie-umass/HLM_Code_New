@@ -9,8 +9,8 @@ if [ -f running_log_vector.txt ];
 fi 
 
 n=1
-rate_func=1
-number_of_trails=10
+rate_func=2
+number_of_trails=100
 
 
 while [ $n -le $number_of_trails ]

@@ -8,6 +8,7 @@
 #include <trng/uniform01_dist.hpp>
 #include <omp.h>
 #include <sys/time.h>
+#include <string>
 using namespace std;
 
 double TL = 1.0;
@@ -68,7 +69,8 @@ class interaction {
 		}
 		
 		void peek_info() {
-			cout<<"Time: "<<this -> time << " Location: "<< this -> location<<endl;
+			//cout<<"Time: "<<this -> time << " Location: "<< this -> location<<endl;
+			printf("Time: %.5lf, Location: %d\n", this->time, this->location);
 		}
 };
 
@@ -158,11 +160,16 @@ inline double rate_function(double x, double y) {
 	
 }
 
+//inline int find_level(double curr_time, int ratio, double small_tau, int Step) {
+//	return int((curr_time - ratio*small_tau*Step)/small_tau);
+//}
+
 template <class T, class P>
 void big_step_distribute(T &clock_time_in_step, P &time_array, const int N, const double small_tau, const int ratio, const int Step) {
 	int tmp;
 	for(auto&& item : time_array) {
-		if(item.time > (Step + 1)*ratio*small_tau)
+		//Here is problem
+		if(item.time >= (Step + 1)*ratio*small_tau)
 		{
 			tmp = ratio;
 		}
@@ -176,7 +183,7 @@ void big_step_distribute(T &clock_time_in_step, P &time_array, const int N, cons
 }
 
 template <class T>
-void move_interaction(T &clock_time_in_step, interaction *pt, const double small_tau, const int ratio, const int Step, const double new_time, const int level)
+void move_interaction(T &clock_time_in_step, interaction *pt, const double small_tau, const int ratio, const int Step, const double new_time, const int level, const string invoke)
 //move the interaction pointed by *pt from old bucket to new bucket
 //n_move1: move without relinking pointers
 //n_move2: move with relinking pointers
@@ -186,7 +193,7 @@ void move_interaction(T &clock_time_in_step, interaction *pt, const double small
 	double old_time = pt->time;
 	int old_level, new_level;
 	
-	if (old_time > (Step + 1)*ratio*small_tau )
+	if (old_time >= (Step + 1)*ratio*small_tau )
 	{
 		old_level = ratio;
 	}
@@ -225,9 +232,24 @@ void move_interaction(T &clock_time_in_step, interaction *pt, const double small
 //	cout<<"(Move_interaction) Old_Level: "<<old_level<<" New_Level: "<<new_level<<endl;
 	bool found = clock_time_in_step[old_level].remove((*pt));
 	if(!found) {
-		cout<<"Check Result: "<<pt->time<<", "<<pt->location<<endl;
+		cout<<invoke<<endl;
+		printf("Check Result: %.5lf, Location: %d\n", pt->time, pt->location);
+		printf("Current Step: %d, Boundary: %.5lf\n", Step, Step * small_tau * ratio);
+		printf("Value before taking flooring function: %.5lf\n", (pt->time - Step * small_tau * ratio)/small_tau);
+		//cout<<<<pt->time<<", "<<pt->location<<endl;
+		printf("Old Time: %.5lf, New Time: %.5lf, pt->time: %.5lf\n", old_time, new_time, pt->time);
 		cout<<"Level: "<<old_level<<" Size: "<<clock_time_in_step[old_level].size()<<"************************\n";
-		clock_time_in_step[old_level].print_vector();
+		//clock_time_in_step[old_level].print_vector();
+		
+		cout<<"All buckets Info\n";
+		for(int i = 0 ; i < ratio + 1 ; i++) {
+			//cout<<"bucket: "<<i<<" ("<<(i + 1) * Step * small_tau * ratio<<")"<<endl;
+			printf("bucket: %d (%.5lf)", i , Step * small_tau * ratio + (i * small_tau));
+			cout<<"------------"<<endl;
+			clock_time_in_step[i].print_vector();
+			cout<<endl;
+		}
+		
 		cout<<"*************************";
 		exit(0);
 	}
@@ -297,7 +319,7 @@ void update(T &clock_time_in_step, P &time_array, Q &energy_array, const int N, 
 			//            E_avg[min_loc] += (current_time - last_update[min_loc])*old_e_right;
 			//            last_update[min_loc] = current_time;
 		}
-		move_interaction(clock_time_in_step, pointer, small_tau,ratio, Step,  current_time + tmp_double, level);
+		move_interaction(clock_time_in_step, pointer, small_tau,ratio, Step,  current_time + tmp_double, level, "Min_loc Call");
 		//clock_time_in_step[level].print_queue();
 		if(time_array[min_loc].time != current_time + tmp_double) {
 			cout<<"Not Updated Properly!"<<endl;
@@ -320,6 +342,12 @@ void update(T &clock_time_in_step, P &time_array, Q &energy_array, const int N, 
 	     	{
 		    //cout<<"tmp_double = "<<tmp_double<<endl;		
 	          //cout<<"energy ="<< energy_array[min_loc - 1]<<" "<<energy_array[min_loc]<<endl;
+				if(tmp_double < current_time) {
+					//printf("Smaller Tmp_double");
+					if(pointer->time - current_time < 0) {
+						printf("Min_loc != 0; Error! pt->time: %.5lf, current_time: %.5lf*********\n", pointer->time, current_time);
+					}
+				}
 				printf("tmp_double = %.5lf, energy_array[min_loc - 1] = %.5lf, energy_array[min_loc] = %.5lf*********\n",tmp_double, energy_array[min_loc - 1], energy_array[min_loc]);
 				exit(0);
 	      	}
@@ -330,7 +358,7 @@ void update(T &clock_time_in_step, P &time_array, Q &energy_array, const int N, 
 				exit(0);
 			}
 			//tmp_double = (pt->time - current_time)*sqrt(energy_array[min_loc - 1] + old_e_left)/sqrt(energy_array[min_loc - 1] + energy_array[min_loc]) + current_time;
-			move_interaction(clock_time_in_step, pointer ,small_tau,ratio, Step, tmp_double, level);
+			move_interaction(clock_time_in_step, pointer ,small_tau,ratio, Step, tmp_double, level, "Left Adjcent");
 			if(time_array[min_loc - 1].time != tmp_double) {
 				cout<<"Not Updated Properly!"<<endl;
 				cout<<"==================\n";
@@ -342,7 +370,14 @@ void update(T &clock_time_in_step, P &time_array, Q &energy_array, const int N, 
 			pointer = &time_array[min_loc + 1];
 			tmp_double = (pointer->time - current_time)*rate_function(energy_array[min_loc + 2], old_e_right)/rate_function(energy_array[min_loc + 2], energy_array[min_loc + 1]) + current_time;
 	   		if(tmp_double > 1e16 || tmp_double < current_time || std::isnan(tmp_double)) {
-		    
+		    		
+				if(tmp_double < current_time) {
+					//printf("Smaller Tmp_double");
+					if(pointer->time - current_time < 0) {
+						printf("Min_loc != N; Error! pt->time: %.5lf, current_time: %.5lf*********\n", pointer->time, current_time);
+					}
+				}
+				
 				printf("tmp_double = %.5lf, energy_array[min_loc + 1] = %.5lf, energy_array[min_loc + 2] = %.5lf*********\n", tmp_double, energy_array[min_loc + 1], energy_array[min_loc + 2]);
 				exit(0);
 			//cout<<"tmp_double = "<<tmp_double<<endl;
@@ -355,7 +390,7 @@ void update(T &clock_time_in_step, P &time_array, Q &energy_array, const int N, 
 				//cout<<"Error with time"<<pt->time<<"  "<<current_time<<endl;
 			}
 			//tmp_double = (pt->time - current_time)*sqrt(energy_array[min_loc + 2] + old_e_right)/sqrt(energy_array[min_loc + 2] + energy_array[min_loc + 1]) + current_time;
-			move_interaction(clock_time_in_step, pointer,small_tau,ratio, Step, tmp_double, level);
+			move_interaction(clock_time_in_step, pointer,small_tau,ratio, Step, tmp_double, level, "Right Adjcent");
 			if(time_array[min_loc + 1].time != tmp_double) {
 				cout<<"Not Updated Properly!"<<endl;
 				cout<<"==================\n";
@@ -373,12 +408,12 @@ void update(T &clock_time_in_step, P &time_array, Q &energy_array, const int N, 
 			pointer = &time_array[min_loc];
 			current_time = pointer->time;
 			
-//			for(int i = 0 ; i < level ; i++) {
-//				if(!clock_time_in_step[i].empty()) {
-//					cout<<"Oops! Not Correct!\n";
-//					exit(0);
-//				}
-//			}
+			for(int i = 0 ; i < level ; i++) {
+				if(!clock_time_in_step[i].empty()) {
+					cout<<"(Update Func) Oops! Not Correct!\n";
+					exit(0);
+				}
+			}
 		}
 		else
 		{
@@ -453,22 +488,59 @@ int main(int argc, char *argv[]) {
 					
 			big_step_distribute(clock_time_in_step, time_array, N, small_tau, ratio, i);
 			
+			bool found = false;
+			
+			for(int j = 0 ; j < ratio; j ++) {
+				for(auto&& item : clock_time_in_step[j]) {
+					if(item.time < (i * small_tau * ratio + j * small_tau) || item.time >= (i * small_tau * ratio + (j + 1) * small_tau)) {
+						cout<<"Check Big_Step_Distribute()\n";
+						printf("Time: %.5lf, Level: %d\n", item.time, j);
+						//printf("Check Result: %.5lf, Location: %d\n", pt->time, pt->location);
+						printf("Current Step: %d, Boundary: %.5lf\n", i, i * small_tau * ratio);
+						//printf("Value before taking flooring function: %.5lf\n", (pt->time - Step * small_tau * ratio)/small_tau);
+						//cout<<<<pt->time<<", "<<pt->location<<endl;
+						//printf("Old Time: %.5lf, New Time: %.5lf, pt->time: %.5lf\n", old_time, new_time, pt->time);
+						//cout<<"Level: "<<old_level<<" Size: "<<clock_time_in_step[old_level].size()<<"************************\n";
+						//clock_time_in_step[old_level].print_vector();
+						
+						cout<<"*******************************\n";
+						cout<<"All buckets Info\n";
+						for(int k = 0 ; k < ratio + 1 ; k++) {
+							//cout<<"bucket: "<<i<<" ("<<(i + 1) * Step * small_tau * ratio<<")"<<endl;
+							printf("bucket: %d (%.5lf)", k , i * small_tau * ratio + (k * small_tau));
+							cout<<"------------"<<endl;
+							clock_time_in_step[k].print_vector();
+							cout<<endl;
+						}
+						
+						cout<<"*************************\n\n";
+						
+						found = true;
+						break;
+						//exit(0);
+					}
+				}
+				if(found) {
+					break;
+				}
+			}
+			
 			for(int j = 0 ; j < ratio; j ++) {
 				if(!clock_time_in_step[j].empty()) {
 					update(clock_time_in_step, time_array, energy_array, N, small_tau, ratio, i, u, r, count, j, energy_integration[rank]);
 				}
 			}
 			
-//			if(clock_time_in_step[ratio].size() != N + 1) {
-//				cout<<"No, Check Algorithm\n";
-//				exit(0);
-//			}
-//			bool res = clock_time_in_step[ratio].check_value((i + 1) * small_tau * ratio);
-//
-//			if(!res) {
-//				cout<<"Uh Oh, Check Algorithm"<<endl;
-//				exit(0);
-//			}
+			if(clock_time_in_step[ratio].size() != N + 1) {
+				cout<<"No, Check Algorithm\n";
+				exit(0);
+			}
+			bool res = clock_time_in_step[ratio].check_value((i + 1) * small_tau * ratio);
+
+			if(!res) {
+				cout<<"Uh Oh, Check Algorithm"<<endl;
+				exit(0);
+			}
 			
 			clock_time_in_step[ratio].clear();
 			
